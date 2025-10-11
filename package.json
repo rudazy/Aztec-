@@ -1,0 +1,35 @@
+{
+  "name": "aztec-dark-market",
+  "version": "0.1.0",
+  "description": "Privacy-preserving institutional trading network on Aztec",
+  "main": "index.js",
+  "scripts": {
+    "compile": "aztec-nargo compile",
+    "deploy": "node scripts/deploy.js",
+    "deploy:testnet": "PXE_URL=https://api.aztec.network node scripts/deploy.js",
+    "deploy:local": "PXE_URL=http://localhost:8080 node scripts/deploy.js",
+    "test": "aztec-nargo test",
+    "clean": "rm -rf target && rm -rf node_modules"
+  },
+  "keywords": [
+    "aztec",
+    "privacy",
+    "defi",
+    "dark-pool",
+    "zk-proofs",
+    "institutional-trading"
+  ],
+  "author": "rudazy",
+  "license": "MIT",
+  "dependencies": {
+    "@aztec/aztec.js": "^0.50.0",
+    "@aztec/accounts": "^0.50.0",
+    "@aztec/noir-contracts.js": "^0.50.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
