@@ -4,13 +4,13 @@
   "description": "Privacy-preserving institutional trading network on Aztec",
   "main": "index.js",
   "scripts": {
-    "compile": "aztec-nargo compile",
-    "deploy": "node scripts/deploy.js",
-    "deploy:testnet": "PXE_URL=https://api.aztec.network node scripts/deploy.js",
-    "deploy:local": "PXE_URL=http://localhost:8080 node scripts/deploy.js",
-    "test": "aztec-nargo test",
-    "clean": "rm -rf target && rm -rf node_modules"
-  },
+  "compile": "echo Run compilation in WSL: cd to project && nargo compile",
+  "deploy": "node scripts/deploy.js",
+  "deploy:testnet": "set PXE_URL=https://api.aztec.network && node scripts/deploy.js",
+  "deploy:local": "set PXE_URL=http://localhost:8080 && node scripts/deploy.js",
+  "test": "echo Tests require Aztec environment - see SETUP.md",
+  "clean": "if exist target rmdir /s /q target"
+  }
   "keywords": [
     "aztec",
     "privacy",
