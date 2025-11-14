@@ -3,6 +3,7 @@
 
 import { SchnorrAccountContract } from '@aztec/accounts/schnorr';
 import { GrumpkinScalar } from '@aztec/foundation/fields';
+import { AccountManager } from '@aztec/aztec.js/wallet';
 
 /**
  * Create or retrieve wallet based on environment
@@ -23,14 +24,17 @@ export async function setupWallet(pxe, config, privateKey = null) {
 
     console.log('🔑 Creating Schnorr account...');
     
-    // Create signing key from the encryption private key
+    // Create signing key
     const signingKey = GrumpkinScalar.fromString(encryptionPrivateKey);
     
-    // Create Schnorr account contract instance
-    const account = new SchnorrAccountContract(signingKey);
+    // Create account contract
+    const accountContract = new SchnorrAccountContract(signingKey);
     
-    // Get wallet from the account
-    const wallet = await account.getWallet(pxe);
+    // Create account manager
+    const accountManager = new AccountManager(pxe, accountContract);
+    
+    // Get or deploy account
+    const wallet = await accountManager.getWallet();
     
     console.log('✅ Wallet ready');
     console.log(`   Address: ${wallet.getAddress()}`);
