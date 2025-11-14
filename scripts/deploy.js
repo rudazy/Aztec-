@@ -1,17 +1,19 @@
-// Deployment Script for Aztec Dark Market
+import 'dotenv/config';
+
+// Deployment Script for Aztec Dark Market - Fixed for v3.0.0-devnet.4
 // File: scripts/deploy.js
 
-import { Contract, Fr, createPXEClient, waitForPXE } from '@aztec/aztec.js';
+import { createSafeJsonRpcClient } from '@aztec/foundation/json-rpc/client';
+import { Contract } from '@aztec/aztec.js/contracts';
+import { Fr } from '@aztec/aztec.js/fields';
 import { loadConfig, getPXEUrl, isDevnet } from '../src/utils/config.js';
 import { setupWallet } from '../src/utils/setup_wallet.js';
 import fs from 'fs';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
 
 // Contract artifacts (generated after compilation)
 let PrivateTokenArtifact, PrivateEscrowArtifact, PrivateOrderBookArtifact;
@@ -34,41 +36,36 @@ async function main() {
     const PXE_URL = getPXEUrl(config);
 
     console.log(`🌍 Environment: ${config.name}`);
-    console.log(`📡 Connecting to PXE at ${PXE_URL}...`);
+    console.log(`🔗 Connecting to PXE at ${PXE_URL}...`);
 
-    const pxe = createPXEClient(PXE_URL);
-    await waitForPXE(pxe);
+    // Create PXE client without schema (v3.0.0-devnet.4)
+    const pxe = createSafeJsonRpcClient(PXE_URL, {}, {
+        namespaceMethods: false
+    });
+
+    console.log('⏳ Connecting to devnet PXE...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     console.log('✅ Connected to PXE\n');
 
-    // Get deployment wallet (handles both sandbox and devnet)
+    // Get deployment wallet
     const deployer = await setupWallet(pxe, config);
-    console.log(`👛 Deployer address: ${deployer.getAddress()}\n`);
+    console.log(`💼 Deployer address: ${deployer.getAddress()}\n`);
 
-    // ==========================================
-    // 1. Deploy Private Token Contract
-    // ==========================================
+    // Deploy Private Token Contract
     console.log('📝 Deploying Private Token Contract...');
-
-    const initialSupply = 1000000; // 1M tokens
+    const initialSupply = 1000000;
 
     const privateToken = await Contract.deploy(
         deployer,
         PrivateTokenArtifact,
-        [
-            deployer.getAddress(),
-            initialSupply,
-        ]
+        [deployer.getAddress(), initialSupply]
     ).send().deployed();
 
     console.log(`✅ Private Token deployed at: ${privateToken.address}`);
-    console.log(`   Token: DarkToken`);
     console.log(`   Initial Supply: ${initialSupply} tokens\n`);
 
-    // ==========================================
-    // 2. Deploy Private Escrow Contract
-    // ==========================================
+    // Deploy Private Escrow Contract
     console.log('📝 Deploying Private Escrow Contract...');
-    
     const privateEscrow = await Contract.deploy(
         deployer,
         PrivateEscrowArtifact,
@@ -77,11 +74,8 @@ async function main() {
 
     console.log(`✅ Private Escrow deployed at: ${privateEscrow.address}\n`);
 
-    // ==========================================
-    // 3. Deploy Private Order Book Contract
-    // ==========================================
+    // Deploy Private Order Book Contract
     console.log('📝 Deploying Private Order Book Contract...');
-    
     const privateOrderBook = await Contract.deploy(
         deployer,
         PrivateOrderBookArtifact,
@@ -90,14 +84,7 @@ async function main() {
 
     console.log(`✅ Private Order Book deployed at: ${privateOrderBook.address}\n`);
 
-    // ==========================================
-    // 4. Configuration (simplified for initial deployment)
-    // ==========================================
-    console.log('⚙️  Contracts deployed and ready\n');
-
-    // ==========================================
-    // 5. Summary
-    // ==========================================
+    // Summary
     console.log('🎉 Deployment Complete!\n');
     console.log('='.repeat(60));
     console.log('Contract Addresses:');
@@ -106,9 +93,9 @@ async function main() {
     console.log(`Private Escrow:     ${privateEscrow.address}`);
     console.log(`Private Order Book: ${privateOrderBook.address}`);
     console.log('='.repeat(60));
-    console.log('\n📋 Save these addresses for frontend integration!\n');
+    console.log('\n📝 Save these addresses for frontend integration!\n');
 
-    // Save deployment info to file
+    // Save deployment info
     const deploymentInfo = {
         environment: config.name,
         network: PXE_URL,
@@ -130,7 +117,6 @@ async function main() {
         },
     };
 
-    // Save to environment-specific file
     const deploymentFileName = config.environment === 'devnet'
         ? 'deployment-devnet.json'
         : 'deployment-info.json';
@@ -142,7 +128,6 @@ async function main() {
 
     console.log(`💾 Deployment info saved to ${deploymentFileName}\n`);
 
-    // If devnet, also display important information
     if (isDevnet(config)) {
         console.log('🌐 DEVNET DEPLOYMENT SUCCESSFUL!');
         console.log('='.repeat(60));
@@ -151,11 +136,10 @@ async function main() {
         console.log(`Private Escrow:     ${privateEscrow.address}`);
         console.log(`Private Order Book: ${privateOrderBook.address}`);
         console.log('='.repeat(60));
-        console.log('\n🔗 Devnet Explorer: https://devnet.aztec-labs.com/');
+        console.log('\n🔍 Devnet Explorer: https://devnet.aztec-labs.com/');
     }
 }
 
-// Error handling
 main()
     .then(() => process.exit(0))
     .catch((error) => {

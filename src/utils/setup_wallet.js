@@ -1,8 +1,8 @@
 // Wallet Setup Utilities for Aztec Dark Market
 // Handles wallet creation for different environments
 
-import { getSchnorrAccount } from '@aztec/accounts/schnorr';
-import { Fr, deriveSigningKey } from '@aztec/aztec.js';
+import { SchnorrAccountContract } from '@aztec/accounts/schnorr';
+import { GrumpkinScalar } from '@aztec/foundation/fields';
 
 /**
  * Create or retrieve wallet based on environment
@@ -12,7 +12,6 @@ import { Fr, deriveSigningKey } from '@aztec/aztec.js';
  * @returns {Promise<object>} Wallet instance
  */
 export async function setupWallet(pxe, config, privateKey = null) {
-    // For devnet, create Schnorr account from private key or environment variable
     const encryptionPrivateKey = privateKey || process.env.ENCRYPTION_PRIVATE_KEY;
 
     if (!encryptionPrivateKey) {
@@ -22,17 +21,17 @@ export async function setupWallet(pxe, config, privateKey = null) {
         );
     }
 
-    const signingKey = deriveSigningKey(Fr.fromString(encryptionPrivateKey));
-    const account = getSchnorrAccount(
-        pxe,
-        Fr.fromString(encryptionPrivateKey),
-        signingKey
-    );
-
-    // Deploy account if needed
-    await account.register();
-
-    const wallet = await account.getWallet();
+    console.log('🔑 Creating Schnorr account...');
+    
+    // Create signing key from the encryption private key
+    const signingKey = GrumpkinScalar.fromString(encryptionPrivateKey);
+    
+    // Create Schnorr account contract instance
+    const account = new SchnorrAccountContract(signingKey);
+    
+    // Get wallet from the account
+    const wallet = await account.getWallet(pxe);
+    
     console.log('✅ Wallet ready');
     console.log(`   Address: ${wallet.getAddress()}`);
 
