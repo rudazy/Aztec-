@@ -1,19 +1,26 @@
-contract PrivateEscrow {
-    use dep::aztec::prelude::*;
+use dep::aztec::macros::aztec;
 
-    #[aztec(storage)]
-    struct Storage {
-        admin: PublicMutable<AztecAddress>,
+#[aztec]
+pub contract PrivateEscrow {
+    use dep::aztec::{
+        macros::{functions::{external, initializer}, storage::storage},
+    };
+    use dep::aztec::protocol_types::address::AztecAddress;
+    use dep::aztec::state_vars::PublicMutable;
+
+    #[storage]
+    struct Storage<Context> {
+        admin: PublicMutable<AztecAddress, Context>,
     }
 
-    #[aztec(public)]
-    #[aztec(initializer)]
+    #[external("public")]
+    #[initializer]
     fn constructor(admin: AztecAddress) {
         storage.admin.write(admin);
     }
 
-    #[aztec(public)]
-    fn get_admin() -> AztecAddress {
+    #[external("utility")]
+    unconstrained fn get_admin() -> AztecAddress {
         storage.admin.read()
     }
 }

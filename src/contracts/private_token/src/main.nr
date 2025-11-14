@@ -1,21 +1,33 @@
-contract PrivateToken {
-    use dep::aztec::prelude::*;
+use dep::aztec::macros::aztec;
 
-    #[aztec(storage)]
-    struct Storage {
-        admin: PublicMutable<AztecAddress>,
-        total_supply: PublicMutable<Field>,
+#[aztec]
+pub contract Token {
+    use dep::aztec::{
+        macros::{functions::{external, initializer}, storage::storage},
+    };
+    use dep::aztec::protocol_types::address::AztecAddress;
+    use dep::aztec::state_vars::PublicMutable;
+
+    #[storage]
+    struct Storage<Context> {
+        admin: PublicMutable<AztecAddress, Context>,
+        total_supply: PublicMutable<Field, Context>,
     }
 
-    #[aztec(public)]
-    #[aztec(initializer)]
+    #[external("public")]
+    #[initializer]
     fn constructor(admin: AztecAddress, initial_supply: Field) {
         storage.admin.write(admin);
         storage.total_supply.write(initial_supply);
     }
 
-    #[aztec(public)]
-    fn get_total_supply() -> Field {
+    #[external("utility")]
+    unconstrained fn get_total_supply() -> Field {
         storage.total_supply.read()
+    }
+
+    #[external("utility")]
+    unconstrained fn get_admin() -> AztecAddress {
+        storage.admin.read()
     }
 }

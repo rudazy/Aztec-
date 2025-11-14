@@ -3,6 +3,7 @@ target/
 proofs/
 Prover.toml
 Verifier.toml
+src/artifacts/
 
 # Build artifacts
 *.o
@@ -21,6 +22,10 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Deployment info
+deployment-info.json
+deployment-devnet.json
+
 # IDE
 .vscode/
 .idea/
@@ -35,3 +40,6 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Aztec
+.aztec/

@@ -2,15 +2,20 @@
   "name": "aztec-dark-market",
   "version": "0.1.0",
   "description": "Privacy-preserving institutional trading network on Aztec",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-  "compile": "echo Run compilation in WSL: cd to project && nargo compile",
-  "deploy": "node scripts/deploy.js",
-  "deploy:testnet": "set PXE_URL=https://api.aztec.network && node scripts/deploy.js",
-  "deploy:local": "set PXE_URL=http://localhost:8080 && node scripts/deploy.js",
-  "test": "echo Tests require Aztec environment - see SETUP.md",
-  "clean": "if exist target rmdir /s /q target"
-  }
+    "compile": "nargo compile",
+    "codegen": "aztec codegen target -o src/artifacts",
+    "clean": "if exist target rmdir /s /q target",
+    "clean:artifacts": "if exist src\\artifacts rmdir /s /q src\\artifacts",
+    "build": "npm run compile && npm run codegen",
+    "deploy": "node scripts/deploy.js",
+    "deploy::devnet": "cross-env ENV=devnet node scripts/deploy.js",
+    "interact": "node scripts/interact.js",
+    "interact::devnet": "cross-env ENV=devnet node scripts/interact.js",
+    "test": "echo Tests require Aztec environment - see SETUP.md"
+  },
   "keywords": [
     "aztec",
     "privacy",
@@ -22,12 +27,17 @@
   "author": "rudazy",
   "license": "MIT",
   "dependencies": {
-    "@aztec/aztec.js": "^0.50.0",
-    "@aztec/accounts": "^0.50.0",
-    "@aztec/noir-contracts.js": "^0.50.0"
+    "@aztec/accounts": "3.0.0-devnet.4",
+    "@aztec/aztec.js": "3.0.0-devnet.4",
+    "@aztec/noir-contracts.js": "3.0.0-devnet.4",
+    "@aztec/protocol-contracts": "3.0.0-devnet.4",
+    "@aztec/pxe": "3.0.0-devnet.4",
+    "@aztec/stdlib": "3.0.0-devnet.4",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "cross-env": "^7.0.3"
   },
   "engines": {
     "node": ">=18.0.0"

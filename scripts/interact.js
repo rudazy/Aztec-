@@ -1,50 +1,73 @@
 // Contract Interaction Examples
 // File: scripts/interact.js
 
-const { Contract, Fr, createPXEClient, waitForPXE } = require('@aztec/aztec.js');
-const { getDeployedTestAccountsWallets } = require('@aztec/accounts/testing');
-const fs = require('fs');
+import { Contract, Fr, createPXEClient, waitForPXE } from '@aztec/aztec.js';
+import { loadConfig, getPXEUrl, isDevnet } from '../src/utils/config.js';
+import { getWallets } from '../src/utils/setup_wallet.js';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load deployed contract addresses
-function loadDeploymentInfo() {
-    if (!fs.existsSync('deployment-info.json')) {
-        console.error('❌ deployment-info.json not found. Run npm run deploy first!');
+function loadDeploymentInfo(config) {
+    const fileName = config.environment === 'devnet'
+        ? 'deployment-devnet.json'
+        : 'deployment-info.json';
+
+    if (!fs.existsSync(fileName)) {
+        console.error(`❌ ${fileName} not found. Run npm run deploy${config.environment === 'devnet' ? '::devnet' : ''} first!`);
         process.exit(1);
     }
-    return JSON.parse(fs.readFileSync('deployment-info.json', 'utf8'));
+    return JSON.parse(fs.readFileSync(fileName, 'utf8'));
 }
 
 async function main() {
     console.log('🎮 Aztec Dark Market - Contract Interaction Demo\n');
 
+    // Load environment configuration
+    const config = loadConfig();
+    const PXE_URL = getPXEUrl(config);
+
     // Load deployment info
-    const deploymentInfo = loadDeploymentInfo();
+    const deploymentInfo = loadDeploymentInfo(config);
     console.log('📋 Loaded deployment info');
+    console.log(`   Environment: ${deploymentInfo.environment}`);
     console.log(`   Network: ${deploymentInfo.network}`);
     console.log(`   Private Token: ${deploymentInfo.contracts.privateToken.address}`);
     console.log(`   Private Escrow: ${deploymentInfo.contracts.privateEscrow.address}`);
     console.log(`   Private Order Book: ${deploymentInfo.contracts.privateOrderBook.address}\n`);
 
     // Connect to PXE
-    const PXE_URL = process.env.PXE_URL || 'http://localhost:8080';
     console.log(`📡 Connecting to PXE at ${PXE_URL}...`);
     const pxe = createPXEClient(PXE_URL);
     await waitForPXE(pxe);
     console.log('✅ Connected\n');
 
-    // Get test wallets
-    const wallets = await getDeployedTestAccountsWallets(pxe);
+    // Get test wallets (handles both sandbox and devnet)
+    const wallets = await getWallets(pxe, config, 3);
     const [deployer, trader1, trader2] = wallets;
-    
+
     console.log('👥 Test Accounts:');
     console.log(`   Deployer: ${deployer.getAddress()}`);
-    console.log(`   Trader 1: ${trader1.getAddress()}`);
-    console.log(`   Trader 2: ${trader2.getAddress()}\n`);
+    if (trader1) console.log(`   Trader 1: ${trader1.getAddress()}`);
+    if (trader2) console.log(`   Trader 2: ${trader2.getAddress()}`);
+    console.log();
 
     // Load contract artifacts
-    const PrivateTokenArtifact = require('../target/private_token.json');
-    const PrivateEscrowArtifact = require('../target/private_escrow.json');
-    const PrivateOrderBookArtifact = require('../target/private_orderbook.json');
+    let PrivateTokenArtifact, PrivateEscrowArtifact, PrivateOrderBookArtifact;
+    try {
+        PrivateTokenArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../target/private_token-Token.json'), 'utf8'));
+        PrivateEscrowArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../target/private_escrow-PrivateEscrow.json'), 'utf8'));
+        PrivateOrderBookArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../target/private_orderbook-PrivateOrderBook.json'), 'utf8'));
+    } catch (error) {
+        console.error('❌ Contract artifacts not found!');
+        console.error('   Run "npm run compile" first to compile the contracts.');
+        console.error('   Error:', error.message);
+        process.exit(1);
+    }
 
     // Initialize contract instances
     const tokenAddress = deploymentInfo.contracts.privateToken.address;
