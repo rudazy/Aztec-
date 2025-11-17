@@ -2,8 +2,7 @@
 // Handles wallet creation for different environments
 
 import { SchnorrAccountContract } from '@aztec/accounts/schnorr';
-import { GrumpkinScalar } from '@aztec/foundation/fields';
-import { AccountManager } from '@aztec/aztec.js/wallet';
+import { Fr, GrumpkinScalar } from '@aztec/foundation/fields';
 
 /**
  * Create or retrieve wallet based on environment
@@ -22,22 +21,24 @@ export async function setupWallet(pxe, config, privateKey = null) {
         );
     }
 
-    console.log('🔑 Creating Schnorr account...');
+    console.log('🔑 Creating Schnorr account from private key...');
     
-    // Create signing key
+    // Parse the private key as signing key
     const signingKey = GrumpkinScalar.fromString(encryptionPrivateKey);
     
-    // Create account contract
+    // Create Schnorr account contract
     const accountContract = new SchnorrAccountContract(signingKey);
     
-    // Create account manager
-    const accountManager = new AccountManager(pxe, accountContract);
-    
-    // Get or deploy account
-    const wallet = await accountManager.getWallet();
+    // Get the account interface which can interact with PXE
+    const completeAddress = await accountContract.getCompleteAddress(pxe);
+    const accountInterface = accountContract.getInterface(completeAddress, { chainId: Fr.ZERO, version: Fr.ZERO });
     
     console.log('✅ Wallet ready');
-    console.log(`   Address: ${wallet.getAddress()}`);
+    console.log(`   Address: ${completeAddress.address}`);
 
-    return wallet;
+    // Return a simple wallet object
+    return {
+        getAddress: () => completeAddress.address,
+        ...accountInterface
+    };
 }
